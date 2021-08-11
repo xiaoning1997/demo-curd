@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.xn.mapper.OrderMapper">
+
+    <select id="findById" parameterType="Integer" resultType="cn.xn.dto.Order">
+        select id, orderNo,goodsName,createdTime
+        from `order`
+        where id = #{id}
+    </select>
+
+    <select id="saveOne" parameterType="map">
+        insert into `order`(orderNo,goodsName,createdTime)
+	    values
+	        (#{orderNo},#{goodsName},now())
+    </select>
+
+    <select id="updateOne" parameterType="map">
+
+	    update `order`
+	    set goodsName = #{goodsName}
+	    where id = #{id}
+
+
+    </select>
+
+    <select id="deleteOne" parameterType="Integer">
+	    delete
+	    from `order`
+	    where id = #{id}
+    </select>
+
+
+</mapper>

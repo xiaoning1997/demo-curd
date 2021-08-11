@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd
+    http://www.springframework.org/schema/mvc
+    http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <!-- autowirte propoerties -->
+    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath*:jdbc.properties</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="druidDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close">
+        <!-- 数据库基本信息配置 -->
+        <property name="driverClassName" value="${mysql.driver}" />
+        <property name="url" value="${mysql.url}" />
+        <property name="username" value="${mysql.username}" />
+        <property name="password" value="${mysql.password}" />
+        <!-- 初始化连接数量 -->
+        <property name="initialSize" value="${druid.initialSize}" />
+        <!-- 最大并发连接数 -->
+        <property name="maxActive" value="${druid.maxActive}" />
+        <!-- 最大空闲连接数 -->
+        <property name="maxIdle" value="${druid.maxIdle}" />
+        <!-- 最小空闲连接数 -->
+        <property name="minIdle" value="${druid.minIdle}" />
+        <!-- 配置获取连接等待超时的时间 -->
+        <property name="maxWait" value="${druid.maxWait}" />
+
+        <!-- 超过时间限制是否回收 -->
+        <property name="removeAbandoned" value="${druid.removeAbandoned}" />
+        <!-- 超过时间限制多长； -->
+        <property name="removeAbandonedTimeout" value="${druid.removeAbandonedTimeout}" />
+        <!-- 配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒 -->
+        <property name="timeBetweenEvictionRunsMillis" value="${druid.timeBetweenEvictionRunsMillis}" />
+        <!-- 配置一个连接在池中最小生存的时间，单位是毫秒 -->
+        <property name="minEvictableIdleTimeMillis" value="${druid.minEvictableIdleTimeMillis}" />
+        <!-- 用来检测连接是否有效的sql，要求是一个查询语句-->
+        <property name="validationQuery" value="${druid.validationQuery}" />
+        <!-- 申请连接的时候检测 -->
+        <property name="testWhileIdle" value="${druid.testWhileIdle}" />
+        <!-- 申请连接时执行validationQuery检测连接是否有效，配置为true会降低性能 -->
+        <property name="testOnBorrow" value="${druid.testOnBorrow}" />
+        <!-- 归还连接时执行validationQuery检测连接是否有效，配置为true会降低性能  -->
+        <property name="testOnReturn" value="${druid.testOnReturn}" />
+        <!-- 打开PSCache，并且指定每个连接上PSCache的大小 -->
+        <property name="poolPreparedStatements" value="${druid.poolPreparedStatements}" />
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="${druid.maxPoolPreparedStatementPerConnectionSize}" />
+
+
+        <property name="filters" value="stat,log4j" />
+
+        <!--属性类型是字符串，通过别名的方式配置扩展插件，常用的插件有：
+                监控统计用的filter:stat
+                日志用的filter:log4j
+                    防御SQL注入的filter:wall -->
+        <!--<property name="filters" value="${druid.filters}" />-->
+
+        <!-- 解密密码必须要配置的项 config, stat启用监控过滤器-->
+        <!--<property name="filters" value="config,stat" />-->
+        <!--<property name="connectionProperties" value="config.decrypt=true" />-->
+    </bean>
+
+
+    <!-- mybatis configureation -->
+    <!-- import mapper.xml -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+
+        <!--<property name="dataSource" ref="multipleDataSource" />-->
+        <!--<property name="dataSource" ref="impalaDataSource" />-->
+        <property name="dataSource" ref="druidDataSource" />
+
+        <property name="configLocation" value="classpath:/myBatisConf.xml"></property>
+        <!--<property name="mapperLocations" value="classpath*:/sqlConfig/*.xml"></property>-->
+        <property name="mapperLocations">
+            <array>
+                <value>classpath*:sqlConfig/*Mapper.xml</value>
+            </array>
+        </property>
+    </bean>
+
+    <!-- scan mapper interface -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--<property name="basePackage" value="classpath:/com.compass.mapper.compass; com.compass.mapper ;com.monitor.mapper" />-->
+        <property name="basePackage" value="cn.xn.mapper" />
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+    </bean>
+
+    <!-- multiple datasource interceptor -->
+    <!-- 配置一个拦截器对象，处理具体的切换数据源的业务 -->
+    <!--<bean id="multipleDataSourceInterceptor" class="com.sgm.dpa.interceptor.MultipleDataSourceInterceptor"></bean>-->
+
+    <!-- Interceptor configuration -->
+    <!--<aop:config>-->
+        <!--&lt;!&ndash; Aspect &ndash;&gt;-->
+        <!--<aop:aspect id="multipleDataSourceAspect" ref="multipleDataSourceInterceptor">-->
+            <!--<aop:pointcut id="multipleDataSourcePointcut" expression="(execution(* com.sgm.dpa.mapper.*.*.*(..))) " />-->
+            <!--&lt;!&ndash;<aop:pointcut id="multipleDataSourcePointcut" expression="(execution(* com.sgm.dpa.mapper.*.*.*(..))) or (execution(* com.monitor.mapper.*.*(..))) " />&ndash;&gt;-->
+            <!--<aop:before method="setMultipleDataSource" pointcut-ref="multipleDataSourcePointcut" />-->
+        <!--</aop:aspect>-->
+    <!--</aop:config>-->
+
+    <!-- multiple datasource configuration -->
+    <!--<bean id="multipleDataSource" class="com.sgm.dpa.db.MultipleDataSource">-->
+        <!--<property name="defaultTargetDataSource" ref="impalaDataSource"/>-->
+        <!--<property name="targetDataSources">-->
+            <!--<map>-->
+                <!--<entry value-ref="mysqlDataSource" key="mysqlDataSource"/>-->
+                <!--<entry value-ref="impalaDataSource" key="impalaDataSource"/>-->
+            <!--</map>-->
+        <!--</property>-->
+    <!--</bean>-->
+
+
+    <!-- spring mvc configureation -->
+    <import resource="classpath*:springMVC-servlet.xml"/>
+
+
+
+</beans>
